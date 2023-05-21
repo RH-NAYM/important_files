@@ -1,61 +1,88 @@
-# import torch
-# model = torch.hub.load('yolov5', 'custom', path='best1.pt', source='local', device='mps')
-# async def det(url):
-#     model.conf = 0.9
-#     model.iou = 0.2
-#     results = model(url)
-#     result = results.pandas().xyxy[0].value_counts('name')
-#     result_json = result.to_json()
-#     return result_json
-
+# Import Library
 import torch
 import asyncio
 import json
 from collections import ChainMap
+import math
+import pandas as pd 
 
-# Load Model_1:
-Banner_model = torch.hub.load('yolov5', 'custom', path='Banner.pt', source='local', device='mps')
-Banner_model.conf = 0.9
-Banner_model.iou = 0.2
+# Load and Adjust Model : 1
+Brand_model = torch.hub.load('yolov5', 'custom', path='weights/Model/New94.pt', source='local', device=0)
+Brand_model.conf = 0.4
+Brand_model.iou = 0.3
 
-# Load Model_2:
-BAT_model = torch.hub.load('yolov5', 'custom', path='BAT.pt', source='local', device='mps')
-BAT_model.conf = 0.9
-BAT_model.iou = 0.2
+# Load and Adjust Model : 2
+Count_model = torch.hub.load('yolov5', 'custom', path='weights/Count_Model/countModel86.pt', source='local', device=0)
+Count_model.conf = 0.4
+Count_model.iou = 0.3
 
+# Created a Function to merge 2 dictionary
+def merge_and_average_dicts(dict1, dict2):
+    merged_dict = {}
+    common_keys = set(dict1.keys()).intersection(set(dict2.keys()))
+    for key in set(dict1.keys()).difference(common_keys):
+        merged_dict[key] = dict1[key]
+    for key in set(dict2.keys()).difference(common_keys):
+        merged_dict[key] = dict2[key]
+    for key in common_keys:
+        average = math.ceil((dict1[key] + dict2[key]) / 2)
+        merged_dict[key] = average
+    return merged_dict
 
-# Create Asynchronus Function for Detection:
-async def det(url):
+# Created an Asynchronus Function to perform the detection
+async def det(url, sequence):
 
-    # Execute Banner Model
-    Banner_loop = asyncio.get_running_loop()
-    Banner_result = await Banner_loop.run_in_executor(None, Banner_model, url)
-    Banner_result = Banner_result.pandas().xyxy[0].value_counts('name')
-    Banner_out = Banner_result.to_json()
-    Banner_result_dict = json.loads(Banner_out)
-    # print(Banner_result_dict)
+    # Execute Brand Model
+    Brand_loop = asyncio.get_running_loop()
+    Brand_result =await Brand_loop.run_in_executor(None, Brand_model, url)
+    Brand_result = Brand_result.pandas().xyxy[0].sort_values('xmin')
+    Brand_df = pd.DataFrame(Brand_result)
+    Brand_sorted_df = pd.DataFrame(Brand_df)
+    name_counts = Brand_sorted_df.groupby('name').size().to_dict()
+    Brand_result_dict = {}
+    for index, row in Brand_sorted_df.iterrows():
+        name = row['name']
+        Brand_result_dict.update({name:name_counts.get(name, 0)})
+    Brand_result_json = json.dumps(Brand_result_dict)
+    a = Brand_result_json
+    a_dict = json.loads(a)
+    dict1 = a_dict
+    print("result1: ",dict1)
 
-    
-    # Execute BAT Model
-    BAT_loop = asyncio.get_running_loop()
-    BAT_result = await BAT_loop.run_in_executor(None, BAT_model, url)
-    BAT_result = BAT_result.pandas().xyxy[0].value_counts('name')
-    BAT_out = BAT_result.to_json()
-    BAT_result_dict = json.loads(BAT_out)
-    # print(BAT_result_dict)
+    # Execute Count Model
+    Count_loop = asyncio.get_running_loop()
+    Count_result =await Count_loop.run_in_executor(None, Count_model, url)
+    Count_result = Count_result.pandas().xyxy[0].sort_values('xmin')
+    Count_df = pd.DataFrame(Count_result)
+    Count_sorted_df = pd.DataFrame(Count_df)
+    name_counts = Count_sorted_df.groupby('name').size().to_dict()
+    Count_result_dict = {}
+    for index, row in Count_sorted_df.iterrows():
+        name = row['name']
+        Count_result_dict.update({name:name_counts.get(name, 0)})
+    Count_result_json = json.dumps(Count_result_dict)
+    b = Count_result_json
+    b_dict = json.loads(b)
+    dict2 = b_dict
+    print("result2: ",dict2)
 
+    # Merging 2 dictionary with the function that was created earlier
+    result_dict = merge_and_average_dicts(dict1, dict2)
 
-    # Adding Two Model Result
-    Combined_result_Dict = { 'Banner': Banner_result_dict,'BAT': BAT_result_dict}
-    Final_result_json = json.dumps(Combined_result_Dict)
-    print(Final_result_json)
+    # Sequence Detection
+    ds = []
+    for i in dict1:
+        ds +=i
+    if ds == sequence:
+        sku = ("Valid Sequence")
+    else:
+        sku = ("Wrong Sequence")
 
-    return Final_result_json
-
-
-
-
-
+    # Finalise the results    
+    result = {'Hair_Care_Items': result_dict, 'Sequence': sku}
+    Final_Result = json.dumps(result)
+    print("Result Sent to User : ", Final_Result)
+    return Final_Result
 
 
 
