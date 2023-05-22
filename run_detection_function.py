@@ -5,6 +5,7 @@ import json
 from collections import ChainMap
 import math
 import pandas as pd 
+from collections import OrderedDict
 
 # Load and Adjust Model : 1
 Brand_model = torch.hub.load('yolov5', 'custom', path='weights/Model/New94.pt', source='local', device=0)
@@ -16,17 +17,22 @@ Count_model = torch.hub.load('yolov5', 'custom', path='weights/Count_Model/count
 Count_model.conf = 0.4
 Count_model.iou = 0.3
 
-# Created a Function to merge 2 dictionary
 def merge_and_average_dicts(dict1, dict2):
-    merged_dict = {}
+    merged_dict = OrderedDict(dict1)
     common_keys = set(dict1.keys()).intersection(set(dict2.keys()))
-    for key in set(dict1.keys()).difference(common_keys):
-        merged_dict[key] = dict1[key]
-    for key in set(dict2.keys()).difference(common_keys):
-        merged_dict[key] = dict2[key]
+    
+    for key in dict1.keys():
+        if key not in common_keys:
+            merged_dict[key] = dict1[key]
+    
+    for key in dict2.keys():
+        if key not in common_keys:
+            merged_dict[key] = dict2[key]
+    
     for key in common_keys:
         average = math.ceil((dict1[key] + dict2[key]) / 2)
         merged_dict[key] = average
+    
     return merged_dict
 
 # Created an Asynchronus Function to perform the detection
