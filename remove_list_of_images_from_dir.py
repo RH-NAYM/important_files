@@ -11,7 +11,7 @@ for new_item in old_del_list:
         n = new_item.replace(".jfif",".txt")
     elif ".JPE" in new_item:
         n = new_item.replace(".JPE",".txt")
-    updated_del_list.append[n]
+    updated_del_list.append(n)
 
 
 
