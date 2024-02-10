@@ -1,17 +1,4 @@
 import multiprocessing
-import uvicorn
-def get_number_of_workers():
-    num_cpus = multiprocessing.cpu_count()
-
-    return num_cpus * 2 + 1
-
-if __name__ == "__main__":
-    num_workers = get_number_of_workers()
-    print("Number of workers : ",num_workers)
-
-
-"""
-import multiprocessing
 
 def get_number_of_workers():
     # Get the number of CPU cores
@@ -24,5 +11,16 @@ def get_number_of_workers():
 if __name__ == "__main__":
     print(get_number_of_workers())
 
+"""
+import multiprocessing
+import uvicorn
+def get_number_of_workers():
+    num_cpus = multiprocessing.cpu_count()
+
+    return num_cpus * 2 + 1
+
+if __name__ == "__main__":
+    num_workers = get_number_of_workers()
+    print("Number of workers : ",num_workers)
 
 """
