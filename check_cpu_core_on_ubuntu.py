@@ -1,3 +1,23 @@
+import multiprocessing
+
+def get_number_of_workers():
+    # Get the number of CPU cores
+    num_cpus = multiprocessing.cpu_count()
+    
+    # You may adjust this formula based on your specific requirements
+    # For example, you could use num_cpus * 2 or any other heuristic
+    return num_cpus
+
+if __name__ == "__main__":
+    print(get_number_of_workers())
+
+
+
+# cmd: lscpu
+
+
+
+"""
 import os
 
 def get_number_of_cpu_cores():
@@ -16,10 +36,8 @@ def get_number_of_cpu_cores():
 if __name__ == "__main__":
     num_cpus = get_number_of_cpu_cores()
     print(f"Number of CPU cores: {num_cpus}")
-  
+    
 
-"""
-cmd: lscpu
 import multiprocessing
 import uvicorn
 from main import app
